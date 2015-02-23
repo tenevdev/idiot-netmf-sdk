@@ -3,7 +3,12 @@ using Microsoft.SPOT;
 
 namespace Idiot.DataTypes
 {
-    class IDataPoint
+    public interface IDataPoint
     {
+        /// <summary>
+        /// Serialize an object to JSON string
+        /// </summary>
+        /// <returns>A JSON representing the serialized object</returns>
+        string toJson();
     }
 }
