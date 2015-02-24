@@ -33,6 +33,7 @@ namespace Idiot.Net
         private string hubId;
         private string projectName;
         private Credentials credentials;
+        private bool isDevelopment = false;
 
         /// <summary>
         /// Initialize connection
@@ -66,9 +67,17 @@ namespace Idiot.Net
             if (this.dataPoints.Count > 0)
             {
                 // There are data points waiting to be sent
-                IDataPoint dataPoint = (IDataPoint)this.dataPoints.Dequeue();    
+                IDataPoint dataPoint = (IDataPoint)this.dataPoints.Dequeue();
 
-                string requestUriString = UrlBuilder.Join(Resources.GetString(Resources.StringResources.DevelopmentAppUrl), "api", this.username, this.projectName, "hubs", this.hubId, "datapoints");
+                string baseUrl = Resources.GetString(Resources.StringResources.WebAppUrl);
+
+                if (this.isDevelopment)
+                {
+                    // Use development url in requests
+                    baseUrl = Resources.GetString(Resources.StringResources.DevelopmentAppUrl);
+                }
+
+                string requestUriString = UrlBuilder.Join(baseUrl, "api", this.username, this.projectName, "hubs", this.hubId, "datapoints");
                 
                 Stream stream = null;
                 HttpWebResponse response = null;
@@ -172,6 +181,11 @@ namespace Idiot.Net
         {
             this.communicationThread.Resume();
             this.Start();
+        }
+
+        public void ConfigureForDevelopment(string baseUrl) 
+        {
+            this.isDevelopment = true;
         }
 
         /// <summary>
