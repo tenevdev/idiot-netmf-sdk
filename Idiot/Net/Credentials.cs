@@ -7,13 +7,11 @@ namespace Idiot.Net
 {
     public class Credentials
     {
-        private string username;
-
         private string password;
 
         public Credentials(string username, string password)
         {
-            this.username = username;
+            this.Username = username;
             this.password = password;
 
             this.AuthorizationHeader = this.toAuthorizationHeader();
@@ -26,8 +24,9 @@ namespace Idiot.Net
 
         private string toAuthorizationHeader()
         {
-            return "Basic " + ConvertBase64.ToBase64String(Encoding.UTF8.GetBytes(this.username + ":" + this.password));
+            return "Basic " + ConvertBase64.ToBase64String(Encoding.UTF8.GetBytes(this.Username + ":" + this.password));
         }
 
+        public string Username { get; set; }
     }
 }
