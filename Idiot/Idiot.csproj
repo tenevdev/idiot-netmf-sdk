@@ -30,7 +30,7 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
-    <Compile Include="DataTypes\IDataPoint.cs" />
+    <Compile Include="DataTypes\DataPoint.cs" />
     <Compile Include="DataTypes\Number.cs" />
     <Compile Include="Net\Credentials.cs" />
     <Compile Include="Net\DataPointService.cs" />
@@ -44,10 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FEZPanda_II_GHIElectronics.NETMF.FEZ, Version=4.1.8.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="GHIElectronics.NETMF.Hardware, Version=4.1.8.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="GHIElectronics.NETMF.W5100, Version=4.1.9.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="GHIElectronics.NETMF.W5100.Dhcp, Version=4.1.8.1, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="GHIElectronics.NETMF.W5100.Http, Version=4.1.9.0, Culture=neutral, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.SPOT.Graphics" />
     <Reference Include="Microsoft.SPOT.Hardware" />
     <Reference Include="Microsoft.SPOT.Native">
     </Reference>
@@ -57,5 +57,11 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Downloads\Json.NETMF\NETMF\IndianaJones.NETMF.Json\IndianaJones.NETMF.Json.csproj">
+      <Project>{46480BCF-F6F2-4E84-BDD4-F478BC9F6749}</Project>
+      <Name>IndianaJones.NETMF.Json</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

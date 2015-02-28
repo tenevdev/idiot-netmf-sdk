@@ -1,4 +1,3 @@
-using System;
 using Microsoft.SPOT;
 using GHIElectronics.NETMF.Net.NetworkInformation;
 using GHIElectronics.NETMF.Net;
@@ -8,9 +7,12 @@ using Idiot.DataTypes;
 using System.Collections;
 using System.Threading;
 using System.IO;
-using System.Resources;
 using Idiot.Properties;
 using System.Text;
+using IndianaJones.NETMF.Json;
+using GHIElectronics.NETMF.Net.Sockets;
+using System;
+using GHIElectronics.NETMF.Hardware;
 
 namespace Idiot.Net
 {
@@ -34,6 +36,7 @@ namespace Idiot.Net
         private string projectName;
         private Credentials credentials;
         private bool isDevelopment = false;
+        private Serializer serializer = new Serializer();
 
         /// <summary>
         /// Initialize connection
@@ -46,6 +49,9 @@ namespace Idiot.Net
             WIZnet_W5100.Enable(SPI.SPI_module.SPI1, (Cpu.Pin)FEZ_Pin.Digital.Di10, (Cpu.Pin)FEZ_Pin.Digital.Di7, true);
             Dhcp.EnableDhcp(mac, hostname);
             Dhcp.RenewDhcpLease();
+
+            // Set current time
+            NTPTime("pool.ntp.org");
 
             // Set interval between requests
             this.RequestInterval = intervalMilliseconds;
@@ -67,7 +73,7 @@ namespace Idiot.Net
             if (this.dataPoints.Count > 0)
             {
                 // There are data points waiting to be sent
-                IDataPoint dataPoint = (IDataPoint)this.dataPoints.Dequeue();
+                DataPoint dataPoint = (DataPoint)this.dataPoints.Dequeue();
 
                 string baseUrl = Resources.GetString(Resources.StringResources.WebAppUrl);
 
@@ -91,7 +97,8 @@ namespace Idiot.Net
                     request.Headers.Add("Authorization", this.credentials.AuthorizationHeader);
 
                     // Encode request body
-                    byte[] buffer = Encoding.UTF8.GetBytes(dataPoint.toJson());
+                    string json = this.serializer.Serialize(dataPoint);
+                    byte[] buffer = Encoding.UTF8.GetBytes(json);
                     request.ContentLength = buffer.Length;
 
                     // Get stream for writing to request body
@@ -123,7 +130,7 @@ namespace Idiot.Net
         /// Add a data point to be sent
         /// </summary>
         /// <param name="dataPoint">The data point to be sent</param>
-        public void PushDataPoint(IDataPoint dataPoint)
+        public void PushDataPoint(DataPoint dataPoint)
         {
             this.dataPoints.Enqueue(dataPoint);
         }
@@ -148,8 +155,9 @@ namespace Idiot.Net
                         Thread.Sleep(this.RequestInterval);
                     }
 
-                    this.Stop();
                 }));
+
+                this.communicationThread.Start();
             }
 
             // Do nothing if the thread had already started
@@ -197,5 +205,48 @@ namespace Idiot.Net
         /// True if the service is currently sending data points
         /// </summary>
         public bool IsStarted { get; set; }
+
+        /// <summary>
+        /// Try to update both system and RTC time using the NTP protocol
+        /// </summary>
+        /// <param name="TimeServer">Time server to use, ex: pool.ntp.org</param>
+        /// <param name="GmtOffset">GMT offset in minutes, ex: -240</param>
+        /// <returns>Returns true if successful</returns>
+        public static bool NTPTime(string TimeServer, int GmtOffset = 0)
+        {
+            Socket s = null;
+            try
+            {
+                EndPoint rep = new IPEndPoint(Dns.GetHostEntry(TimeServer).AddressList[0], 123);
+                s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                byte[] ntpData = new byte[48];
+                Array.Clear(ntpData, 0, 48);
+                ntpData[0] = 0x1B; // Set protocol version
+                s.SendTo(ntpData, rep); // Send Request   
+                if (s.Poll(30 * 1000 * 1000, SelectMode.SelectRead)) // Waiting an answer for 30s, if nothing: timeout
+                {
+                    s.ReceiveFrom(ntpData, ref rep); // Receive Time
+                    byte offsetTransmitTime = 40;
+                    ulong intpart = 0;
+                    ulong fractpart = 0;
+                    for (int i = 0; i <= 3; i++) intpart = (intpart << 8) | ntpData[offsetTransmitTime + i];
+                    for (int i = 4; i <= 7; i++) fractpart = (fractpart << 8) | ntpData[offsetTransmitTime + i];
+                    ulong milliseconds = (intpart * 1000 + (fractpart * 1000) / 0x100000000L);
+                    s.Close();
+                    DateTime dateTime = new DateTime(1900, 1, 1) + TimeSpan.FromTicks((long)milliseconds * TimeSpan.TicksPerMillisecond);
+                    Utility.SetLocalTime(dateTime.AddMinutes(GmtOffset));
+                    RealTimeClock.SetTime(DateTime.Now);
+                    return true;
+                }
+                s.Close();
+            }
+            catch
+            {
+                try { s.Close(); }
+                catch { }
+            }
+            return false;
+        }
     }
+
 }

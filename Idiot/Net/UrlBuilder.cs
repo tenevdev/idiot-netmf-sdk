@@ -1,6 +1,3 @@
-using System;
-using Microsoft.SPOT;
-
 namespace Idiot.Net
 {
     internal static class UrlBuilder
@@ -10,7 +7,7 @@ namespace Idiot.Net
             string url = "";
             foreach (string argument in args)
             {
-                url += "/" + argument;
+                url += argument + "/";
             }
             return url;
         }

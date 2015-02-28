@@ -1,5 +1,3 @@
-using System;
-using Microsoft.SPOT;
 using System.Text;
 using GHIElectronics.NETMF.Net;
 
